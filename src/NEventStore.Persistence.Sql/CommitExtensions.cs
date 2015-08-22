@@ -5,6 +5,7 @@ namespace NEventStore.Persistence.Sql
     using System.Data;
     using NEventStore.Logging;
     using NEventStore.Serialization;
+    using System.Threading.Tasks;
 
     public static class CommitExtensions
     {
@@ -20,13 +21,13 @@ namespace NEventStore.Persistence.Sql
         private const int PayloadIndex = 9;
         private static readonly ILog Logger = LogFactory.BuildLogger(typeof (CommitExtensions));
 
-        public static ICommit GetCommit(this IDataRecord record, ISerialize serializer, ISqlDialect sqlDialect)
+        public static Task<ICommit> GetCommit(this IDataRecord record, ISerialize serializer, ISqlDialect sqlDialect)
         {
             Logger.Verbose(Messages.DeserializingCommit, serializer.GetType());
             var headers = serializer.Deserialize<Dictionary<string, object>>(record, HeadersIndex);
             var events = serializer.Deserialize<List<EventMessage>>(record, PayloadIndex);
 
-            return new Commit(record[BucketIdIndex].ToString(),
+            var commit =  new Commit(record[BucketIdIndex].ToString(),
                 record[StreamIdOriginalIndex].ToString(),
                 record[StreamRevisionIndex].ToInt(),
                 record[CommitIdIndex].ToGuid(),
@@ -35,6 +36,7 @@ namespace NEventStore.Persistence.Sql
                 new LongCheckpoint(record[CheckpointIndex].ToLong()).Value,
                 headers,
                 events);
+            return Task.FromResult<ICommit>(commit);
         }
 
         public static string StreamId(this IDataRecord record)
@@ -58,7 +60,7 @@ namespace NEventStore.Persistence.Sql
             {
                 return default(T);
             }
-
+            
             object value = record[index];
             if (value == null || value == DBNull.Value)
             {

@@ -6,6 +6,7 @@ namespace NEventStore.Persistence.Sql.SqlDialects
     using System.Linq;
     using System.Transactions;
     using NEventStore.Persistence.Sql;
+    using System.Threading.Tasks;
 
     public class DelimitedDbStatement : CommonDbStatement
     {
@@ -14,14 +15,19 @@ namespace NEventStore.Persistence.Sql.SqlDialects
         public DelimitedDbStatement(
             ISqlDialect dialect,
             TransactionScope scope,
-            IDbConnection connection,
+            IDbAsyncConnection connection,
             IDbTransaction transaction)
             : base(dialect, scope, connection, transaction)
         {}
 
-        public override int ExecuteNonQuery(string commandText)
+        public override async Task<int> ExecuteNonQuery(string commandText)
         {
-            return SplitCommandText(commandText).Sum(x => base.ExecuteNonQuery(x));
+            var result = 0;
+            foreach (var x in SplitCommandText(commandText))
+            {
+                result += await base.ExecuteNonQuery(x);
+            }
+            return result;
         }
 
         private static IEnumerable<string> SplitCommandText(string delimited)

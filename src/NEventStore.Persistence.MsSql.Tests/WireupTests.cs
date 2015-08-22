@@ -8,13 +8,16 @@ namespace NEventStore.Persistence.AcceptanceTests
     using NEventStore.Persistence.Sql.SqlDialects;
     using Xunit;
     using Xunit.Should;
+    using System.Threading.Tasks;
+    using System.Linq;
+    using System.IO;
 
     public class when_specifying_a_hasher : SpecificationBase
     {
         private bool _hasherInvoked;
         private IStoreEvents _eventStore;
 
-        protected override void Context()
+        protected override Task Context()
         {
             _eventStore = Wireup
                 .Init()
@@ -29,23 +32,25 @@ namespace NEventStore.Persistence.AcceptanceTests
                 .EnlistInAmbientTransaction()
                 .UsingBinarySerialization()
                 .Build();
+
+            return Task.FromResult(false);
         }
 
         protected override void Cleanup()
         {
             if (_eventStore != null)
             {
-                _eventStore.Advanced.Drop();
+                _eventStore.Advanced.Drop().Wait();
                 _eventStore.Dispose();
             }
         }
 
-        protected override void Because()
+        protected override async Task Because()
         {
-            using (var stream = _eventStore.OpenStream(Guid.NewGuid()))
+            using (var stream = await _eventStore.OpenStream(Guid.NewGuid()))
             {
                 stream.Add(new EventMessage{ Body = "Message" });
-                stream.CommitChanges(Guid.NewGuid());
+                await stream.CommitChanges(Guid.NewGuid());
             }
         }
 
@@ -55,4 +60,65 @@ namespace NEventStore.Persistence.AcceptanceTests
             _hasherInvoked.ShouldBeTrue();
         }
     }
+
+
+    //public class when_having_high_concurrency : SpecificationBase
+    //{
+    //    private IStoreEvents _eventStore;
+
+    //    protected override Task Context()
+    //    {
+    //        _eventStore = Wireup
+    //            .Init()
+    //            .UsingSqlPersistence(new EnviromentConnectionFactory("MsSql", "System.Data.SqlClient"))
+    //            .WithDialect(new MsSqlDialect())
+    //            .InitializeStorageEngine()
+                
+    //            //.EnlistInAmbientTransaction()
+    //            .UsingBinarySerialization()
+    //            .Build();
+
+    //        return Task.FromResult(false);
+    //    }
+
+    //    protected override void Cleanup()
+    //    {
+    //        if (_eventStore != null)
+    //        {
+    //            _eventStore.Advanced.Drop().Wait();
+    //            _eventStore.Dispose();
+    //        }
+    //    }
+
+    //    protected override async Task Because()
+    //    {
+            
+    //    }
+
+    //    [Fact]
+    //    public async Task should_invoke_hasher()
+    //    {
+    //        using (var reader = File.OpenText(@"D:\MrJingle\Dev\ironruby-1.1-dotnet3.5.zip"))
+    //        {
+
+    //            var ev = new EventMessage { Body = await reader.ReadToEndAsync() };
+    //            for (int i = 0; i < 1; i++)
+    //            {
+    //                var tasks = Enumerable.Range(0, 1)
+    //                    .Select(_ => Task.Run(() => Do(ev)));
+    //                await Task.WhenAll(tasks);
+    //            }
+                
+    //        }
+    //    }
+
+    //    private async Task Do(EventMessage ev)
+    //    {
+    //        using (var stream = await _eventStore.OpenStream(Guid.NewGuid()))
+    //        {
+    //            stream.Add(ev);
+    //            await stream.CommitChanges(Guid.NewGuid());
+    //        }
+    //    }
+    //}
 }

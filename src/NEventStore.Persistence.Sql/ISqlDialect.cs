@@ -54,11 +54,11 @@ namespace NEventStore.Persistence.Sql
         IDbTransaction OpenTransaction(IDbConnection connection);
 
         IDbStatement BuildStatement(
-            TransactionScope scope, IDbConnection connection, IDbTransaction transaction);
+            TransactionScope scope, IDbAsyncConnection connection, IDbTransaction transaction);
 
         bool IsDuplicate(Exception exception);
 
-        void AddPayloadParamater(IConnectionFactory connectionFactory, IDbConnection connection, IDbStatement cmd, byte[] payload);
+        void AddPayloadParamater(IConnectionFactory connectionFactory, IDbAsyncConnection connection, IDbStatement cmd, byte[] payload);
 
         DateTime ToDateTime(object value);
 

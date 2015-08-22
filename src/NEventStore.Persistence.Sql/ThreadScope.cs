@@ -4,25 +4,32 @@ namespace NEventStore.Persistence.Sql
     using System.Threading;
     using System.Web;
     using NEventStore.Logging;
+    using System.Threading.Tasks;
+    using System.Runtime.Remoting.Messaging;
 
     public class ThreadScope<T> : IDisposable where T : class
     {
-        private readonly HttpContext _context = HttpContext.Current;
-        private readonly T _current;
+        //private readonly HttpContext _context = HttpContext.Current;
+        private T _current;
         private readonly ILog _logger = LogFactory.BuildLogger(typeof (ThreadScope<T>));
-        private readonly bool _rootScope;
+        private bool _rootScope;
         private readonly string _threadKey;
         private bool _disposed;
+        private readonly Func<Task<T>> _factory;
 
-        public ThreadScope(string key, Func<T> factory)
+        public ThreadScope(string key, Func<Task<T>> factory)
         {
             _threadKey = typeof (ThreadScope<T>).Name + ":[{0}]".FormatWith(key ?? string.Empty);
+            _factory = factory;
+        }
 
-            T parent = Load();
+        public async Task Initialize()
+        {
+            var parent = Load();
             _rootScope = parent == null;
             _logger.Debug(Messages.OpeningThreadScope, _threadKey, _rootScope);
 
-            _current = parent ?? factory();
+            _current = parent ?? (await _factory());
 
             if (_current == null)
             {
@@ -75,24 +82,29 @@ namespace NEventStore.Persistence.Sql
 
         private T Load()
         {
-            if (_context != null)
-            {
-                return _context.Items[_threadKey] as T;
-            }
+            //if (_context != null)
+            //{
+            //    return _context.Items[_threadKey] as T;
+            //}
 
-            return Thread.GetData(Thread.GetNamedDataSlot(_threadKey)) as T;
+            return CallContext.LogicalGetData(_threadKey) as T;
+            //return Thread.GetData(Thread.GetNamedDataSlot(_threadKey)) as T;
         }
 
         private void Store(T value)
         {
-            if (_context != null)
+            //if (_context != null)
+            //{
+            //    _context.Items[_threadKey] = value;
+            //}
+            //else
             {
-                _context.Items[_threadKey] = value;
-            }
-            else
-            {
-                Thread.SetData(Thread.GetNamedDataSlot(_threadKey), value);
+                CallContext.LogicalSetData(_threadKey, value);
+                //Thread.SetData(Thread.GetNamedDataSlot(_threadKey), value);
             }
         }
     }
+
+
+    
 }

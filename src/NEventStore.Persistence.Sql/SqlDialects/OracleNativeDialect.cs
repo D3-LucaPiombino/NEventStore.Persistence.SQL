@@ -9,7 +9,7 @@ namespace NEventStore.Persistence.Sql.SqlDialects
     public class OracleNativeDialect : CommonSqlDialect
     {
         private const int UniqueKeyViolation = -2146232008;
-        Action<IConnectionFactory, IDbConnection, IDbStatement, byte[]> _addPayloadParamater;
+        Action<IConnectionFactory, IDbAsyncConnection, IDbStatement, byte[]> _addPayloadParamater;
 
         public override string AppendSnapshotToCommit
         {
@@ -161,7 +161,7 @@ namespace NEventStore.Persistence.Sql.SqlDialects
             get { return MakeOracleParameter(base.MaxStreamRevision); }
         }
 
-        public override IDbStatement BuildStatement(TransactionScope scope, IDbConnection connection, IDbTransaction transaction)
+        public override IDbStatement BuildStatement(TransactionScope scope, IDbAsyncConnection connection, IDbTransaction transaction)
         {
             return new OracleDbStatement(this, scope, connection, transaction);
         }
@@ -195,7 +195,7 @@ namespace NEventStore.Persistence.Sql.SqlDialects
             get { return (q, r) => { } ; }
         }
 
-        public override void AddPayloadParamater(IConnectionFactory connectionFactory, IDbConnection connection, IDbStatement cmd, byte[] payload)
+        public override void AddPayloadParamater(IConnectionFactory connectionFactory, IDbAsyncConnection connection, IDbStatement cmd, byte[] payload)
         {
             if (_addPayloadParamater == null)
             {
@@ -219,7 +219,7 @@ namespace NEventStore.Persistence.Sql.SqlDialects
             _addPayloadParamater(connectionFactory, connection, cmd, payload);
         }
 
-        private Action<IConnectionFactory, IDbConnection, IDbStatement, byte[]> CreateOraAddPayloadAction(
+        private Action<IConnectionFactory, IDbAsyncConnection, IDbStatement, byte[]> CreateOraAddPayloadAction(
             string assemblyName)
         {
             Assembly assembly = Assembly.Load(assemblyName);

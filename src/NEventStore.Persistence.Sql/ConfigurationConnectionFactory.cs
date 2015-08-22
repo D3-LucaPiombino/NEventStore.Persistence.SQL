@@ -7,6 +7,7 @@ namespace NEventStore.Persistence.Sql
     using System.Data.Common;
     using System.Linq;
     using NEventStore.Logging;
+    using System.Threading.Tasks;
 
     public class ConfigurationConnectionFactory : IConnectionFactory
     {
@@ -40,10 +41,10 @@ namespace NEventStore.Persistence.Sql
             get { return GetConnectionStringSettings(_connectionName); }
         }
 
-        public virtual IDbConnection Open()
+        public virtual Task<IDbAsyncConnection> OpenAsync()
         {
             Logger.Verbose(Messages.OpeningMasterConnection, _connectionName);
-            return Open(_connectionName);
+            return OpenAsync(_connectionName);
         }
 
         public Type GetDbProviderFactoryType()
@@ -52,14 +53,16 @@ namespace NEventStore.Persistence.Sql
             return factory.GetType();
         }
 
-        protected virtual IDbConnection Open(string connectionName)
+        protected virtual async Task<IDbAsyncConnection> OpenAsync(string connectionName)
         {
             ConnectionStringSettings setting = GetSetting(connectionName);
             string connectionString = setting.ConnectionString;
-            return new ConnectionScope(connectionString, () => Open(connectionString, setting));
+            var scope = new ConnectionScope(connectionString, () => Open(connectionString, setting));
+            await scope.Initialize();
+            return scope;
         }
 
-        protected virtual IDbConnection Open(string connectionString, ConnectionStringSettings setting)
+        protected virtual async Task<DbConnection> Open(string connectionString, ConnectionStringSettings setting)
         {
             DbProviderFactory factory = GetFactory(setting);
             DbConnection connection = factory.CreateConnection();
@@ -69,11 +72,11 @@ namespace NEventStore.Persistence.Sql
             }
 
             connection.ConnectionString = connectionString;
-
+            
             try
             {
                 Logger.Verbose(Messages.OpeningConnection, setting.Name);
-                connection.Open();
+                await connection.OpenAsync();
             }
             catch (Exception e)
             {

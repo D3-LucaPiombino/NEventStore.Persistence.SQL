@@ -2,6 +2,7 @@ using System;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace NEventStore.Persistence.Sql.Tests
 {
@@ -16,9 +17,11 @@ namespace NEventStore.Persistence.Sql.Tests
             _dbProviderFactory = DbProviderFactories.GetFactory(providerInvariantName);
         }
 
-        public IDbConnection Open()
+        public async Task<IDbAsyncConnection> OpenAsync()
         {
-            return new ConnectionScope("master", OpenInternal);
+            var scope = new ConnectionScope("master", OpenInternal);
+            await scope.Initialize();
+            return scope;
         }
 
         public Type GetDbProviderFactoryType()
@@ -26,9 +29,11 @@ namespace NEventStore.Persistence.Sql.Tests
             return _dbProviderFactory.GetType();
         }
 
-        private IDbConnection OpenInternal()
+        private async Task<DbConnection> OpenInternal()
         {
             string connectionString = Environment.GetEnvironmentVariable(_envVarKey, EnvironmentVariableTarget.Process);
+            if (connectionString == null)
+                connectionString = "Data Source=(localdb)\\v11.0;Initial Catalog=NEventStore;Integrated Security=true;";
             if (connectionString == null)
             {
                 string message =
@@ -45,7 +50,7 @@ namespace NEventStore.Persistence.Sql.Tests
             connection.ConnectionString = connectionString;
             try
             {
-                connection.Open();
+                await connection.OpenAsync();
             }
             catch (Exception e)
             {

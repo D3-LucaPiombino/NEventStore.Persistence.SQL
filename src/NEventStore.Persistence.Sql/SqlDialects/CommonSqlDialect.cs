@@ -183,7 +183,7 @@ namespace NEventStore.Persistence.Sql.SqlDialects
 
         public abstract bool IsDuplicate(Exception exception);
 
-        public virtual void AddPayloadParamater(IConnectionFactory connectionFactory, IDbConnection connection, IDbStatement cmd, byte[] payload)
+        public virtual void AddPayloadParamater(IConnectionFactory connectionFactory, IDbAsyncConnection connection, IDbStatement cmd, byte[] payload)
         {
             cmd.AddParameter(Payload, payload);
         }
@@ -205,7 +205,7 @@ namespace NEventStore.Persistence.Sql.SqlDialects
         }
 
         public virtual IDbStatement BuildStatement(
-            TransactionScope scope, IDbConnection connection, IDbTransaction transaction)
+            TransactionScope scope, IDbAsyncConnection connection, IDbTransaction transaction)
         {
             return new CommonDbStatement(this, scope, connection, transaction);
         }

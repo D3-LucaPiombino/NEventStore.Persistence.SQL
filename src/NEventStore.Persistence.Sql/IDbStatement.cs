@@ -4,6 +4,8 @@ namespace NEventStore.Persistence.Sql
     using System.Collections.Generic;
     using System.Data;
     using NEventStore.Persistence.Sql.SqlDialects;
+    using System.Threading.Tasks;
+    using ALinq;
 
     public interface IDbStatement : IDisposable
     {
@@ -11,14 +13,14 @@ namespace NEventStore.Persistence.Sql
 
         void AddParameter(string name, object value, DbType? parameterType = null);
 
-        int ExecuteNonQuery(string commandText);
+        Task<int> ExecuteNonQuery(string commandText);
 
-        int ExecuteWithoutExceptions(string commandText);
+        Task<int> ExecuteWithoutExceptions(string commandText);
 
-        object ExecuteScalar(string commandText);
+        Task<object> ExecuteScalar(string commandText);
 
-        IEnumerable<IDataRecord> ExecuteWithQuery(string queryText);
+        IAsyncEnumerable<IDataRecord> ExecuteWithQuery(string queryText);
 
-        IEnumerable<IDataRecord> ExecutePagedQuery(string queryText, NextPageDelegate nextpage);
+        IAsyncEnumerable<IDataRecord> ExecutePagedQuery(string queryText, NextPageDelegate nextpage);
     }
 }

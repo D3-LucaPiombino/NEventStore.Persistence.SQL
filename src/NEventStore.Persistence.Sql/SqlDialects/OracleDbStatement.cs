@@ -6,12 +6,13 @@ namespace NEventStore.Persistence.Sql.SqlDialects
     using System.Reflection;
     using System.Transactions;
     using NEventStore.Persistence.Sql;
+    using System.Threading.Tasks;
 
     public class OracleDbStatement : CommonDbStatement
     {
         private readonly ISqlDialect _dialect;
 
-        public OracleDbStatement(ISqlDialect dialect, TransactionScope scope, IDbConnection connection, IDbTransaction transaction)
+        public OracleDbStatement(ISqlDialect dialect, TransactionScope scope, IDbAsyncConnection connection, IDbTransaction transaction)
             : base(dialect, scope, connection, transaction)
         {
             _dialect = dialect;
@@ -31,12 +32,12 @@ namespace NEventStore.Persistence.Sql.SqlDialects
             }
         }
 
-        public override int ExecuteNonQuery(string commandText)
+        public override async Task<int> ExecuteNonQuery(string commandText)
         {
             try
             {
-                using (IDbCommand command = BuildCommand(commandText))
-                    return command.ExecuteNonQuery();
+                using (var command = BuildCommand(commandText))
+                    return await command.ExecuteNonQueryAsync();
             }
             catch (Exception e)
             {
@@ -49,9 +50,9 @@ namespace NEventStore.Persistence.Sql.SqlDialects
             }
         }
 
-        protected override IDbCommand BuildCommand(string statement)
+        protected override IAsyncDbCommand BuildCommand(string statement)
         {
-            IDbCommand command = base.BuildCommand(statement);
+            var command = base.BuildCommand(statement);
             PropertyInfo pi = command.GetType().GetProperty("BindByName");
             if (pi != null)
             {
