@@ -142,7 +142,7 @@ namespace NEventStore.Persistence.Sql.SqlDialects
             }
         }
 
-        protected virtual IAsyncEnumerable<IDataRecord> ExecuteQuery(string queryText, NextPageDelegate nextpage, int pageSize)
+        protected virtual IAsyncEnumerable<IDataRecord> ExecuteQuery2(string queryText, NextPageDelegate nextpage, int pageSize)
         {
             Parameters.Add(_dialect.Skip, Tuple.Create((object) 0, (DbType?) null));
             var command = BuildCommand(queryText);
@@ -157,6 +157,57 @@ namespace NEventStore.Persistence.Sql.SqlDialects
                 throw;
             }
         }
+
+        protected virtual IAsyncEnumerable<IDataRecord> ExecuteQuery(string queryText, NextPageDelegate nextpage, int pageSize)
+        {
+            Parameters.Add(_dialect.Skip, Tuple.Create((object)0, (DbType?)null));
+            return AsyncEnumerable.Create<IDataRecord>(async producer =>
+            {
+                using (var command = BuildCommand(queryText))
+                {
+                    var position = 0;
+                    var read = 0;
+                    try
+                    { 
+                        do
+                        {
+                            using (var reader = await command.ExecuteReaderAsync())
+                            {
+                                read = 0;
+                                while (await reader.ReadAsync())
+                                {
+                                    await producer.Yield(reader);
+                                    position++;
+                                    read++;
+
+                                    if (IsPageCompletelyEnumerated(pageSize, position))
+                                    {
+                                        command.SetParameter(_dialect.Skip, position);
+                                        nextpage(command, reader);
+                                    }
+                                }
+                                Logger.Verbose(Messages.EnumeratedRowCount, position);
+                            }
+                        }
+                        while (read > 0 && IsPageCompletelyEnumerated(pageSize,position));
+                        
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Debug(Messages.EnumerationThrewException, e.GetType());
+                        throw new StorageUnavailableException(e.Message, e);
+                    }
+                }
+            });
+            
+        }
+
+        private bool IsPageCompletelyEnumerated(int pageSize, int position)
+        {
+            return pageSize > 0 &&  // Check if paging is disabled (pageSize == 0)
+                (position > 0 && 0 == (position % pageSize)); // Check if we have enumerated all the rows in this page
+        }
+
 
         protected virtual IAsyncDbCommand BuildCommand(string statement)
         {
@@ -204,4 +255,5 @@ namespace NEventStore.Persistence.Sql.SqlDialects
             param.DbType = type ?? (value == null ? DbType.Binary : param.DbType);
         }
     }
+
 }

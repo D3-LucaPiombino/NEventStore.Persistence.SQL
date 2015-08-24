@@ -37,10 +37,6 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ALinq, Version=0.1.5212.31037, Culture=neutral, PublicKeyToken=7e22a2e7cfe603b8, processorArchitecture=MSIL">
-      <HintPath>$(SolutionDir)\packages\ALinq.0.1.5212.31037\lib\net45\ALinq.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="FluentAssertions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=33f2691a05b67b6a, processorArchitecture=MSIL">
       <HintPath>$(SolutionDir)\packages\FluentAssertions.3.5.0\lib\net45\FluentAssertions.dll</HintPath>
       <Private>True</Private>
@@ -128,7 +124,6 @@
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

@@ -107,10 +107,6 @@
     <Compile Include="UniqueKeyViolationException.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="ALinq, Version=0.1.5212.31037, Culture=neutral, PublicKeyToken=7e22a2e7cfe603b8, processorArchitecture=MSIL">
-      <HintPath>$(SolutionDir)\packages\ALinq.0.1.5212.31037\lib\net45\ALinq.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />

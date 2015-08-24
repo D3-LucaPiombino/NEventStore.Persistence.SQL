@@ -108,7 +108,7 @@ namespace NEventStore.Persistence.Sql
                     query.AddParameter(_dialect.CommitSequence, 0);
                     return query
                         .ExecutePagedQuery(statement, _dialect.NextPageDelegate)
-                        .Select(x => x.GetCommit(_serializer, _dialect));
+                        .Select(async x => await x.GetCommit(_serializer, _dialect));
                 });
         }
 
@@ -315,7 +315,7 @@ namespace NEventStore.Persistence.Sql
                 string statement = _dialect.GetCommitsFromCheckpoint;
                 query.AddParameter(_dialect.CheckpointNumber, checkpoint.LongValue);
                 return query.ExecutePagedQuery(statement, (q, r) => { })
-                    .Select(x => x.GetCommit(_serializer, _dialect));
+                    .Select(async x => await x.GetCommit(_serializer, _dialect));
             });
         }
 
@@ -389,7 +389,7 @@ namespace NEventStore.Persistence.Sql
             return ExecuteQuery(statement => Task.FromResult(query(statement)));
         }
 
-        protected virtual IAsyncEnumerable<T> ExecuteQuery<T>(Func<IDbStatement, Task<IAsyncEnumerable<T>>> query)
+        protected virtual IAsyncEnumerable<T> ExecuteQuery2<T>(Func<IDbStatement, Task<IAsyncEnumerable<T>>> query)
         {
             
             return AsyncEnumerable.Create<T>(async producer =>
@@ -440,6 +440,56 @@ namespace NEventStore.Persistence.Sql
 
                     throw new StorageException(e.Message, e);
                 }
+            });
+        }
+
+
+
+        protected virtual IAsyncEnumerable<T> ExecuteQuery<T>(Func<IDbStatement, Task<IAsyncEnumerable<T>>> query)
+        {
+
+            return AsyncEnumerable.Create<T>(async producer =>
+            {
+                ThrowWhenDisposed();
+
+                using (var scope = OpenQueryScope())
+                using (var connection = await _connectionFactory.OpenAsync())
+                using (var transaction = _dialect.OpenTransaction(connection))
+                using (var statement = _dialect.BuildStatement(scope, connection, transaction))
+                {
+                    Logger.Verbose(Messages.ExecutingQuery);
+                    try
+                    {
+                        statement.PageSize = _pageSize;
+
+                        var q = await query(statement);
+
+                        var enumerator = q.GetEnumerator();
+
+                        while(await enumerator.MoveNext())
+                        {
+                            await producer.Yield(enumerator.Current);
+                        }
+
+                        //await producer.Yield(await query(statement));
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Debug(Messages.StorageThrewException, e.GetType());
+                        if (e is StorageUnavailableException)
+                        {
+                            throw;
+                        }
+                        throw new StorageException(e.Message, e);
+                    }
+                    finally
+                    {
+                        if (scope != null)
+                            scope.Complete();
+                        Logger.Verbose(Messages.QueryCompleted);
+                    }
+                }
+                
             });
         }
 

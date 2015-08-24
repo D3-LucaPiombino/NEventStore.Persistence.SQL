@@ -11,6 +11,7 @@ namespace NEventStore.Persistence.Sql.SqlDialects
     using System.Threading.Tasks;
     using System.Threading;
     using ALinq;
+    using System.Linq;
 
     public class PagedEnumerationCollection : IEnumerable<IDataRecord>, IEnumerator<IDataRecord>
     {
@@ -421,4 +422,15 @@ namespace NEventStore.Persistence.Sql.SqlDialects
             return false;
         }
     }
+
+
+
+    
+
+
+    
+
+
+
+    
 }

@@ -393,31 +393,5 @@ namespace NEventStore.Persistence.Sql
     }
 
 
-    public static class AsyncEnumerableExtensions
-    {
-        public static Task Yield<T>(this ConcurrentAsyncProducer<T> producer, IAsyncEnumerable<T> other)
-        {
-            return other.ForEach(c => producer.Yield(c.Item));
-        }
-        public static IAsyncEnumerable<TOut> SelectSynch<TIn, TOut>(this IAsyncEnumerable<TIn> enumerable, Func<TIn, TOut> selector)
-        {
-            return AsyncEnumerable.Select(enumerable, item => Task.FromResult(selector(item)));
-        }
-
-        public static IAsyncEnumerable<T> AsAsyncEnumerable<T>(this Task<T[]> source)
-        {
-            return AsAsyncEnumerable(source.ContinueWith(p => (IEnumerable<T>)p.Result));
-        }
-        public static IAsyncEnumerable<T> AsAsyncEnumerable<T>(this Task<IEnumerable<T>> source)
-        {
-            return AsyncEnumerable.Create<T>(async producer =>
-            {
-                var enumerable = await source;
-                foreach (var item in enumerable)
-                {
-                    await producer.Yield(item);
-                }
-            });
-        }
-    }
+    
 }
