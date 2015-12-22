@@ -33,7 +33,7 @@ namespace NEventStore.Persistence.Sql.Tests
         {
             string connectionString = Environment.GetEnvironmentVariable(_envVarKey, EnvironmentVariableTarget.Process);
             if (connectionString == null)
-                connectionString = "Data Source=(localdb)\\v11.0;Initial Catalog=NEventStore;Integrated Security=true;";
+                connectionString = "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=NEventStoreUnitTests;Integrated Security=true;";
             if (connectionString == null)
             {
                 string message =

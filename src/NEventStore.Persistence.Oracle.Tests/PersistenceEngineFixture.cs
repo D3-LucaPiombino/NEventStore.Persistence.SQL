@@ -1,5 +1,7 @@
 ﻿using NEventStore.Persistence.Sql.Tests;
 
+[assembly: Xunit.CollectionBehavior(DisableTestParallelization = true)]
+
 namespace NEventStore.Persistence.AcceptanceTests
 {
     using NEventStore.Persistence.Sql;
@@ -10,7 +12,7 @@ namespace NEventStore.Persistence.AcceptanceTests
     {
         public PersistenceEngineFixture()
         {
-            _createPersistence = pageSize =>
+            _createPersistence = (pageSize, systemTimeProvider) =>
                 new SqlPersistenceFactory(
                     new EnviromentConnectionFactory("Oracle", "Oracle.ManagedDataAccess.Client"),
                     new BinarySerializer(),

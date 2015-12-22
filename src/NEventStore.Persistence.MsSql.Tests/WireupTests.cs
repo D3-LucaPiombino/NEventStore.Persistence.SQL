@@ -7,10 +7,8 @@ namespace NEventStore.Persistence.AcceptanceTests
     using NEventStore.Persistence.Sql;
     using NEventStore.Persistence.Sql.SqlDialects;
     using Xunit;
-    using Xunit.Should;
     using System.Threading.Tasks;
-    using System.Linq;
-    using System.IO;
+    using FluentAssertions;
 
     public class when_specifying_a_hasher : SpecificationBase
     {
@@ -36,11 +34,11 @@ namespace NEventStore.Persistence.AcceptanceTests
             return Task.FromResult(false);
         }
 
-        protected override void Cleanup()
+        protected override async Task Cleanup()
         {
             if (_eventStore != null)
             {
-                _eventStore.Advanced.Drop().Wait();
+                await _eventStore.Advanced.Drop();
                 _eventStore.Dispose();
             }
         }
@@ -57,7 +55,7 @@ namespace NEventStore.Persistence.AcceptanceTests
         [Fact]
         public void should_invoke_hasher()
         {
-            _hasherInvoked.ShouldBeTrue();
+            _hasherInvoked.Should().BeTrue();
         }
     }
 

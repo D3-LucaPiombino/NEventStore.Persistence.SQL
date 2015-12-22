@@ -1,4 +1,6 @@
-﻿namespace NEventStore.Persistence.AcceptanceTests
+﻿[assembly: Xunit.CollectionBehavior(DisableTestParallelization = true)]
+
+namespace NEventStore.Persistence.AcceptanceTests
 {
     using NEventStore.Persistence.Sql;
     using NEventStore.Persistence.Sql.SqlDialects;
@@ -8,7 +10,7 @@
     {
         public PersistenceEngineFixture()
         {
-            _createPersistence = pageSize => 
+            _createPersistence = (pageSize, systemTimeProvider) => 
                 new SqlPersistenceFactory(
                     new ConfigurationConnectionFactory("NEventStore.Persistence.AcceptanceTests.Properties.Settings.SQLite"),
                     new BinarySerializer(),
